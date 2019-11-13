@@ -1,5 +1,6 @@
   
 const API_URL = 'https://apis.is/company?name=';
+const companies = document;
 
 /**
  * Leit að fyrirtækjum á Íslandi gegnum apis.is
@@ -17,6 +18,7 @@ const program = (() => {
   }
 
   function submit(e){
+    e.preventDefault();
     if(userInput.value.length == 0){
         alert("Lén verður að vera strengur");
         return;
@@ -26,16 +28,52 @@ const program = (() => {
     showLoadingGif();
     result.open('GET', companyURL, true);
     result.onload = function(){
-        if(result.status >= 200 && result.status < 400){
-            var companyInfo = JSON.parse(result.response);
-            clearChildNodes();
-            addCompanyInfo("Nafn: ", companyInfo.result[0].name);
-            addCompanyInfo("Kennitala: ", companyInfo.result[0].sn);
-            if(companyInfo.result[0].active == 1){
-                addCompanyInfo("Heimilisfang: ", companyInfo.result[0].address);
-            }
+      if(result.status >= 200 && result.status < 400){
+        var companyInfo = JSON.parse(result.response);
+        clearChildNodes();
+        if(companyInfo.results.length == 0){
+          allResults.appendChild(document.createTextNode("Ekkert fyrirtæki fannst fyrir leitarstreng"));
         }
-    };
+        for (let i = 0; i < companyInfo.results.length; i++) {
+          // Bæta við nafni
+          var name = document.createElement('dt');
+          var nameText = document.createElement('dd');
+          var section = document.createElement('dl');
+          section.setAttribute('id', 'singleCompany');
+          name.appendChild(document.createTextNode("Nafn: "));
+          nameText.appendChild(document.createTextNode(companyInfo.results[i].name));
+          section.appendChild(name);
+          section.appendChild(nameText);
+          // Bæta við kennitölu
+          var sn = document.createElement('dt');
+          var snText = document.createElement('dd');
+          sn.appendChild(document.createTextNode("Kennitala: "));
+          snText.appendChild(document.createTextNode(companyInfo.results[i].sn));
+          section.appendChild(sn);
+          section.appendChild(snText);
+          // Bæta við heimilisfangi ef fyrirtækið er active
+          if(companyInfo.results[i].active == 1){
+            var address = document.createElement('dt');
+            var addressText = document.createElement('dd');
+            address.appendChild(document.createTextNode("Heimilisfang: "));
+            addressText.appendChild(document.createTextNode(companyInfo.results[i].address));
+            section.appendChild(address);
+            section.appendChild(addressText);
+            section.style.border = "solid 2px green";
+          } 
+          // Setja rauðan border ef fyrirtækið er ekki active
+          else {
+            section.style.border = "solid 2px red";
+          }
+          allResults.appendChild(section);
+          var separator = document.createElement('hr');
+          allResults.appendChild(separator);
+        }
+      } else {
+        allResults.appendChild(document.createTextNode("Villa við að sækja gögn"));
+      }
+    }
+    result.send();
   }
   
   function showLoadingGif(){
@@ -44,6 +82,7 @@ const program = (() => {
     loadImg.setAttribute('src', 'loading.gif');
     loadImg.setAttribute('height', '12');
     loadImg.setAttribute('width', '12');
+    allResults.appendChild(document.createTextNode("Leita að fyrirtækjum"));
     allResults.appendChild(loadImg);
   }
 
@@ -53,21 +92,8 @@ const program = (() => {
     }
   }
 
-  function addCompanyInfo(type, info){
-      var infoType = document.createElement('dt');
-      var infoText = document.createElement('dd');
-      var section = document.createElement('dl');
-
-      infoType.appendChild(document.createTextNode(type));
-      infoText.appendChild(document.createTextNode(info));
-      section.appendChild(infoType);
-      section.appendChild(infoText);
-
-      allResults.appendChild(section);
-  }
-
   return {
-    init,
+    init, 
   };
 })();
 
